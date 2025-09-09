@@ -1,6 +1,18 @@
-__pycache__/
+# Local Terraform files
+**/.terraform/
+**/*.tfstate
+**/*.tfstate.*
+**/.terraform.lock.hcl
+
+# Local Python files
+**/__pycache__/
 *.pyc
+
+# Virtual environments
 .venv/
-.idea/
-.env
+venv/
+ENV/
+
+# OS-generated files
 .DS_Store
+Thumbs.db
