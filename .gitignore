@@ -1,18 +1,19 @@
-# Local Terraform files
+# Terraform-specific files
 **/.terraform/
-**/*.tfstate
-**/*.tfstate.*
-**/.terraform.lock.hcl
+*.tfstate
+*.tfstate.*.backup
+*.tfvars
+crash.log
+crash.*.log
+.terraform.tfplan
 
-# Local Python files
-**/__pycache__/
-*.pyc
+# Allow the lock file to be committed.
+# This is a crucial file for team consistency.
+!**/.terraform.lock.hcl
 
-# Virtual environments
-.venv/
-venv/
-ENV/
-
-# OS-generated files
-.DS_Store
-Thumbs.db
+# IDE and OS-specific files
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store```
