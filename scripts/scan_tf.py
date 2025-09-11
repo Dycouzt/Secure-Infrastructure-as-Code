@@ -1,114 +1,76 @@
-import os
-import subprocess
 import json
-import pandas as pd
+import subprocess
+from rich.console import Console
+from rich.table import Table
 
-def run_scan(command):
-    """Runs a shell command and returns its output."""
+console = Console()
+
+def run_tfsec(directory):
+    """Runs tfsec scan and returns the JSON output."""
+    console.print(f"[bold cyan]Running tfsec on {directory}...[/bold cyan]")
     try:
-        # Execute the command, capturing stdout and stderr
-        # We use text=True to get stdout/stderr as strings
         result = subprocess.run(
-            command,
-            shell=True,
-            check=True,
-            capture_output=True,
-            text=True
+            ["tfsec", directory, "--format", "json"],
+            capture_output=True, text=True, check=True
         )
-        return result.stdout
-    except subprocess.CalledProcessError as e:
-        # If the command returns a non-zero exit code, it's an error
-        print(f"Error running command: {command}")
-        print(f"Stderr: {e.stderr}")
+        return json.loads(result.stdout)
+    except (subprocess.CalledProcessError, FileNotFoundError) as e:
+        console.print(f"[bold red]Error running tfsec: {e}[/bold red]")
         return None
 
-def parse_tfsec(json_output):
-    """Parses the JSON output from a tfsec scan."""
-    print("\n--- Parsing tfsec Results ---")
-    results = []
-    if not json_output:
-        print("No tfsec output to parse.")
-        return results
-
+def run_checkov(directory):
+    """Runs checkov scan and returns the JSON output."""
+    console.print(f"[bold cyan]Running checkov on {directory}...[/bold cyan]")
     try:
-        data = json.loads(json_output)
-        for result in data.get("results", []):
-            results.append({
-                "Tool": "tfsec",
-                "Severity": result.get("severity", "N/A"),
-                "Resource": result.get("resource", "N/A"),
-                "Message": result.get("description", "N/A"),
-                "Link": result.get("links", [""])[0]
-            })
-    except json.JSONDecodeError:
-        print("Failed to decode tfsec JSON output.")
-    return results
+        result = subprocess.run(
+            ["checkov", "-d", directory, "-o", "json"],
+            capture_output=True, text=True, check=True
+        )
+        return json.loads(result.stdout)
+    except (subprocess.CalledProcessError, FileNotFoundError) as e:
+        console.print(f"[bold red]Error running checkov: {e}[/bold red]")
+        return None
 
-def parse_checkov(json_output):
-    """Parses the JSON output from a checkov scan."""
-    print("\n--- Parsing checkov Results ---")
-    results = []
-    if not json_output:
-        print("No checkov output to parse.")
-        return results
-
-    try:
-        data = json.loads(json_output)
-        # Checkov's structure can be a single dict or a list
-        if isinstance(data, dict):
-            check_results = data.get("results", {}).get("failed_checks", [])
-        elif isinstance(data, list):
-             check_results = data[0].get("results", {}).get("failed_checks", [])
-        else:
-            check_results = []
-        
-        for check in check_results:
-            results.append({
-                "Tool": "checkov",
-                "Severity": check.get("severity", "N/A"),
-                "Resource": check.get("resource", "N/A"),
-                "Message": check.get("check_name", "N/A"),
-                "Link": check.get("guideline", "")
-            })
-    except json.JSONDecodeError:
-        print("Failed to decode checkov JSON output.")
-    return results
-
-def print_summary_table(results):
-    """Prints a summary of scan results in a formatted table."""
-    if not results:
-        print("\n✅ No security issues found or all scans passed!")
+def parse_tfsec_results(results):
+    """Parses and prints tfsec results in a table."""
+    if not results or "results" not in results:
         return
-    
-    # Create a DataFrame for easy formatting
-    df = pd.DataFrame(results)
-    
-    # Reorder columns for better readability
-    df = df[["Tool", "Severity", "Resource", "Message", "Link"]]
-    
-    print("\n--- 📜 Security Scan Summary ---")
-    # Using tabulate for a clean table format
-    from tabulate import tabulate
-    print(tabulate(df, headers='keys', tablefmt='grid'))
 
+    table = Table(title="tfsec Scan Results")
+    table.add_column("Severity", style="magenta")
+    table.add_column("Resource", style="green")
+    table.add_column("Recommendation", style="cyan")
+
+    for result in results["results"]:
+        table.add_row(result["severity"], result["resource"], result["description"])
+    console.print(table)
+
+def parse_checkov_results(results):
+    """Parses and prints checkov results in a table."""
+    if not results or "results" not in results or "failed_checks" not in results["results"]:
+        return
+
+    table = Table(title="checkov Scan Results")
+    table.add_column("Severity", style="magenta")
+    table.add_column("Resource", style="green")
+    table.add_column("Guideline", style="cyan")
+
+    for check in results["results"]["failed_checks"]:
+        table.add_row(
+            check.get("severity", "UNKNOWN"),
+            check["resource"],
+            check["check_name"] + "\n" + check["guideline"]
+        )
+    console.print(table)
 
 if __name__ == "__main__":
-    # Define the directory containing the Terraform code
-    terraform_dir = "../terraform/insecure" # Change to ../terraform/secure to test the fixed code
-    print(f"🔍 Scanning Terraform directory: {terraform_dir}")
+    insecure_tf_dir = "../terraform/insecure"
+    secure_tf_dir = "../terraform/secure"
 
-    # --- Run tfsec ---
-    print("\n--- Running tfsec ---")
-    tfsec_command = f"tfsec {terraform_dir} --format json"
-    tfsec_output = run_scan(tfsec_command)
-    tfsec_results = parse_tfsec(tfsec_output)
+    console.print("\n[bold]Scanning Insecure Terraform Configuration[/bold]")
+    parse_tfsec_results(run_tfsec(insecure_tf_dir))
+    parse_checkov_results(run_checkov(insecure_tf_dir))
 
-    # --- Run checkov ---
-    print("\n--- Running checkov ---")
-    checkov_command = f"checkov -d {terraform_dir} -o json"
-    checkov_output = run_scan(checkov_command)
-    checkov_results = parse_checkov(checkov_output)
-
-    # Combine all results and print the summary
-    all_results = tfsec_results + checkov_results
-    print_summary_table(all_results)
+    console.print("\n[bold]Scanning Secure Terraform Configuration[/bold]")
+    parse_tfsec_results(run_tfsec(secure_tf_dir))
+    parse_checkov_results(run_checkov(secure_tf_dir))

@@ -52,8 +52,8 @@ resource "aws_security_group" "insecure_sg" {
 }
 
 resource "aws_instance" "web_server" {
-  ami           = "ami-0c55b159cbfafe1f0" // Amazon Linux 2 AMI (free tier eligible)
-  instance_type = "t2.micro"      // Free tier eligible
+  ami           = "ami-0c55b159cbfafe1f0" // Amazon Linux 2 AMI 
+  instance_type = "t2.micro"   
 
   vpc_security_group_ids = [aws_security_group.insecure_sg.id]
 

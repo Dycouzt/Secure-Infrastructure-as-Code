@@ -1,4 +1,4 @@
-// These files define AWS resources with common security misconfigurations.
+// This is the remediated and secured main.tf version
 
 provider "aws" {
   region = "us-east-1"
