@@ -1,16 +1,32 @@
 // These files within the terraform/insecure directory, define AWS resources with common security misconfigurations.
 
+
 provider "aws" {
   region = "us-east-1"
+}
+
+// Data source to dynamically find the latest Amazon Linux 2 AMI
+data "aws_ami" "amazon_linux" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
 }
 
 resource "aws_s3_bucket" "insecure_bucket" {
   bucket = "my-insecure-iac-project-bucket-${random_id.id.hex}"
   acl    = "public-read" // Insecure: Allows public read access to the bucket.
 
-  // Insecure: Server-side encryption is not enabled.
-  // Insecure: Versioning is not enabled.
-  // Insecure: Access logging is not configured.
+  // FIX: This line explicitly allows ACLs, overriding the new AWS default.
+  object_ownership = "BucketOwnerPreferred"
 }
 
 resource "random_id" "id" {
@@ -52,8 +68,9 @@ resource "aws_security_group" "insecure_sg" {
 }
 
 resource "aws_instance" "web_server" {
-  ami           = "ami-0c55b159cbfafe1f0" // Amazon Linux 2 AMI 
-  instance_type = "t2.micro"   
+  // FIX: Reference the data source for a valid AMI ID
+  ami           = data.aws_ami.amazon_linux.id
+  instance_type = "t2.micro"      // Free tier eligible
 
   vpc_security_group_ids = [aws_security_group.insecure_sg.id]
 
