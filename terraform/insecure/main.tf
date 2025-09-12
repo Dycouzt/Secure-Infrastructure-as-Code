@@ -1,5 +1,13 @@
 // These files within the terraform/insecure directory, define AWS resources with common security misconfigurations.
 
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
 
 provider "aws" {
   region = "us-east-1"
