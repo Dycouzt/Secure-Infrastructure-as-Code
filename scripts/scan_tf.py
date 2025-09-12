@@ -1,5 +1,7 @@
 import json
 import subprocess
+import argparse # Import the argparse library
+import os # Import the os library to check if the directory exists
 from rich.console import Console
 from rich.table import Table
 
@@ -34,6 +36,7 @@ def run_checkov(directory):
 def parse_tfsec_results(results):
     """Parses and prints tfsec results in a table."""
     if not results or "results" not in results:
+        console.print("[yellow]tfsec found no issues.[/yellow]")
         return
 
     table = Table(title="tfsec Scan Results")
@@ -47,7 +50,8 @@ def parse_tfsec_results(results):
 
 def parse_checkov_results(results):
     """Parses and prints checkov results in a table."""
-    if not results or "results" not in results or "failed_checks" not in results["results"]:
+    if not results or results.get("summary", {}).get("failed") == 0:
+        console.print("[yellow]checkov found no issues.[/yellow]")
         return
 
     table = Table(title="checkov Scan Results")
@@ -55,7 +59,7 @@ def parse_checkov_results(results):
     table.add_column("Resource", style="green")
     table.add_column("Guideline", style="cyan")
 
-    for check in results["results"]["failed_checks"]:
+    for check in results.get("results", {}).get("failed_checks", []):
         table.add_row(
             check.get("severity", "UNKNOWN"),
             check["resource"],
@@ -64,13 +68,21 @@ def parse_checkov_results(results):
     console.print(table)
 
 if __name__ == "__main__":
-    insecure_tf_dir = "../terraform/insecure"
-    secure_tf_dir = "../terraform/secure"
+    # --- Argument Parsing ---
+    # Create the parser
+    parser = argparse.ArgumentParser(description="Scan a Terraform directory with tfsec and checkov.")
+    # Add an argument for the directory
+    parser.add_argument("directory", help="The path to the Terraform directory to scan.")
+    # Parse the arguments
+    args = parser.parse_args()
 
-    console.print("\n[bold]Scanning Insecure Terraform Configuration[/bold]")
-    parse_tfsec_results(run_tfsec(insecure_tf_dir))
-    parse_checkov_results(run_checkov(insecure_tf_dir))
+    target_directory = args.directory
 
-    console.print("\n[bold]Scanning Secure Terraform Configuration[/bold]")
-    parse_tfsec_results(run_tfsec(secure_tf_dir))
-    parse_checkov_results(run_checkov(secure_tf_dir))
+    # --- Directory Validation ---
+    if not os.path.isdir(target_directory):
+        console.print(f"[bold red]Error: The directory '{target_directory}' does not exist.[/bold red]")
+        exit(1)
+
+    console.print(f"\n[bold]Scanning Terraform Configuration in: {target_directory}[/bold]")
+    parse_tfsec_results(run_tfsec(target_directory))
+    parse_checkov_results(run_checkov(target_directory))
