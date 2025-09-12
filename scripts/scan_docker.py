@@ -1,17 +1,20 @@
 import json
 import subprocess
+import argparse # Import the argparse library
+import os # Import the os library
 from rich.console import Console
 from rich.table import Table
 
 console = Console()
 
 def build_docker_image(dockerfile_path, image_tag):
-    """Builds a Docker image."""
-    console.print(f"[bold cyan]Building Docker image {image_tag}...[/bold cyan]")
+    """Builds a Docker image from a given path."""
+    console.print(f"[bold cyan]Building Docker image {image_tag} from '{dockerfile_path}'...[/bold cyan]")
     try:
+        # We pass the path to the Docker build command. Docker will use the Dockerfile in that path.
         subprocess.run(
-            ["docker", "build", "-t", image_tag, "."],
-            cwd=dockerfile_path, check=True, capture_output=True
+            ["docker", "build", "-t", image_tag, dockerfile_path],
+            check=True, capture_output=True
         )
         console.print(f"[bold green]Successfully built {image_tag}[/bold green]")
         return True
@@ -50,6 +53,7 @@ def run_dockle(image_tag):
 def parse_trivy_results(results):
     """Parses and prints trivy results."""
     if not results or "Results" not in results:
+        console.print("[yellow]trivy found no issues.[/yellow]")
         return
 
     table = Table(title="trivy Scan Results")
@@ -70,6 +74,7 @@ def parse_trivy_results(results):
 def parse_dockle_results(results):
     """Parses and prints dockle results."""
     if not results or "details" not in results:
+        console.print("[yellow]dockle found no issues.[/yellow]")
         return
 
     table = Table(title="dockle Scan Results")
@@ -82,15 +87,23 @@ def parse_dockle_results(results):
     console.print(table)
 
 if __name__ == "__main__":
-    insecure_docker_dir = "../docker/insecure"
-    secure_docker_dir = "../docker/secure"
-    insecure_image_tag = "insecure-app:latest"
-    secure_image_tag = "secure-app:latest"
+    # --- Argument Parsing ---
+    parser = argparse.ArgumentParser(description="Build and scan a Docker image with trivy and dockle.")
+    parser.add_argument("directory", help="The path to the directory containing the Dockerfile.")
+    args = parser.parse_args()
 
-    if build_docker_image(insecure_docker_dir, insecure_image_tag):
-        parse_trivy_results(run_trivy(insecure_image_tag))
-        parse_dockle_results(run_dockle(insecure_image_tag))
+    target_directory = args.directory
+    # Use the directory name to create a more descriptive image tag
+    dir_name = os.path.basename(target_directory)
+    image_tag = f"{dir_name}-app:latest"
 
-    if build_docker_image(secure_docker_dir, secure_image_tag):
-        parse_trivy_results(run_trivy(secure_image_tag))
-        parse_dockle_results(run_dockle(secure_image_tag))
+    # --- Directory Validation ---
+    if not os.path.isdir(target_directory):
+        console.print(f"[bold red]Error: The directory '{target_directory}' does not exist.[/bold red]")
+        exit(1)
+
+    # Build the image from the specified directory
+    if build_docker_image(target_directory, image_tag):
+        # If build is successful, run the scans
+        parse_trivy_results(run_trivy(image_tag))
+        parse_dockle_results(run_dockle(image_tag))
