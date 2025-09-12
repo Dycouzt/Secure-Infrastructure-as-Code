@@ -1,7 +1,7 @@
 import json
 import subprocess
-import argparse # Import the argparse library
-import os # Import the os library
+import argparse
+import os 
 from rich.console import Console
 from rich.table import Table
 
@@ -87,7 +87,7 @@ def parse_dockle_results(results):
     console.print(table)
 
 if __name__ == "__main__":
-    # --- Argument Parsing ---
+    # Parse Arguments
     parser = argparse.ArgumentParser(description="Build and scan a Docker image with trivy and dockle.")
     parser.add_argument("directory", help="The path to the directory containing the Dockerfile.")
     args = parser.parse_args()
@@ -97,7 +97,7 @@ if __name__ == "__main__":
     dir_name = os.path.basename(target_directory)
     image_tag = f"{dir_name}-app:latest"
 
-    # --- Directory Validation ---
+    # Validate Directory Existence
     if not os.path.isdir(target_directory):
         console.print(f"[bold red]Error: The directory '{target_directory}' does not exist.[/bold red]")
         exit(1)

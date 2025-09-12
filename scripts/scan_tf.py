@@ -1,7 +1,7 @@
 import json
 import subprocess
-import argparse # Import the argparse library
-import os # Import the os library to check if the directory exists
+import argparse 
+import os
 from rich.console import Console
 from rich.table import Table
 
@@ -68,7 +68,6 @@ def parse_checkov_results(results):
     console.print(table)
 
 if __name__ == "__main__":
-    # --- Argument Parsing ---
     # Create the parser
     parser = argparse.ArgumentParser(description="Scan a Terraform directory with tfsec and checkov.")
     # Add an argument for the directory
@@ -78,7 +77,7 @@ if __name__ == "__main__":
 
     target_directory = args.directory
 
-    # --- Directory Validation ---
+    # Validate Directory Existence
     if not os.path.isdir(target_directory):
         console.print(f"[bold red]Error: The directory '{target_directory}' does not exist.[/bold red]")
         exit(1)
