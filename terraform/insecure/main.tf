@@ -4,7 +4,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      version = "~> 6.12.0"
     }
   }
 }
@@ -33,8 +33,6 @@ resource "aws_s3_bucket" "insecure_bucket" {
   bucket = "my-insecure-iac-project-bucket-${random_id.id.hex}"
   acl    = "public-read" // Insecure: Allows public read access to the bucket.
 
-  // FIX: This line explicitly allows ACLs, overriding the new AWS default.
-  object_ownership = "BucketOwnerPreferred"
 }
 
 resource "random_id" "id" {
