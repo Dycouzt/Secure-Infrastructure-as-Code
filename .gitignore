@@ -7,11 +7,9 @@ crash.log
 crash.*.log
 .terraform.tfplan
 
-# Allow the lock file to be committed.
-# This is a crucial file for team consistency.
+# Crucial file, needs to be allowed for committing.
 !**/.terraform.lock.hcl
 
-# IDE and OS-specific files
 .idea/
 .vscode/
 *.swp
