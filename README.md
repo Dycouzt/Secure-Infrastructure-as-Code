@@ -39,6 +39,20 @@ The project workflow is straightforward:
 4.  **Remediation:** A `secure` version of the code is provided where all identified issues have been fixed according to security best practices.
 5.  **Verification:** The scripts are run again against the `secure` code to verify that all vulnerabilities have been successfully remediated.
 
+### Script Execution Flow
+
+**Terraform Scan (`scan_tf.py`):**
+1. The script starts.
+2. It prints "Scanning Terraform Configuration".
+3. It runs `tfsec` on the target directory and prints the results table.
+4. It runs `checkov` on the same directory and prints its results table.
+
+**Docker Scan (`scan_docker.py`):**
+1. The script starts.
+2. It builds the Docker image using the Dockerfile from the target directory.
+3. It runs `trivy` on the newly built image and prints the vulnerability table.
+4. It runs `dockle` on the same image and prints the best-practice violations.
+
 ---
 
 ## Design Choices
