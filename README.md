@@ -135,6 +135,14 @@ python scripts/scan_docker.py docker/secure
 
 ![Secure Docker Scan Results](./assets/secure_docker_scan.png)
 
+**A Note on Residual OS Vulnerabilities**
+A key observation from the secure scan is that some OS-level vulnerabilities remain. This is an expected and important outcome, demonstrating a crucial concept in container security.
+
+These vulnerabilities are not in our application code but are inherited from the base image's operating system (e.g., Debian). While we patched the most critical issues, some residual risk from underlying system libraries will always exist due to the natural delay between a vulnerability's discovery and the release of a patched base image.
+
+To achieve a truly minimal attack surface, the industry best practice is to use **distroless images**. These images contain only the application and its essential runtime dependencies, removing the OS shell, package manager, and other utilities where vulnerabilities are most often found.
+
+This project intentionally uses a standard hardened image to illustrate this common, real-world scenario and to showcase how distroless images serve as the ultimate step in minimizing a container's attack surface.
 ---
 
 ## Author
