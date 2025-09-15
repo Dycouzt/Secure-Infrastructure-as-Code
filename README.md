@@ -41,18 +41,28 @@ The project workflow is straightforward:
 
 ---
 
+## Design Choices
+
+### Why I left variables.tf and outputs.tf empty
+In this project, I left variables.tf and outputs.tf empty by design. In a real-world Terraform deployment, variables.tf would make the code configurable and reusable by defining input variables, and outputs.tf would expose important information about deployed resources, like IPs or bucket names. For this educational project, I hardcoded values in main.tf and focused on static security analysis, so variables and outputs weren’t needed. This keeps the project simple and ensures the focus remains on identifying security misconfigurations.
+
+---
+
 ## Setup and Usage
+
+### AWS account setup
+To set up my environment for this IaC project, I created a dedicated IAM user (terraform-admin) in AWS, attached the AdministratorAccess policy, and generated an Access Key ID and Secret Access Key. I then configured the AWS CLI on my local machine with these credentials so Terraform could authenticate and manage resources. In production, I would limit permissions following the principle of least privilege, but for this sandbox project, full admin access simplifies setup and prevents permission errors.
 
 ### Prerequisites
 - Python 3.7+
 - AWS CLI installed and configured (for Terraform to work)
 - Terraform installed
-- Docker installed and **running** (important)
+- Docker installed and running
 
 ### Installation
 1.  **Clone the repository:**
     ```bash
-    git clone <your-repo-url>
+    git clone https://github.com/Dycouzt/Secure-Infrastructure-as-Code
     cd iac-security-review-project
     ```
 2.  **Install Python dependencies:**
@@ -62,6 +72,7 @@ The project workflow is straightforward:
 3.  **Install Security Tools (macOS with Homebrew example):**
     ```bash
     brew install tfsec checkov trivy
+    brew install goodwithtech/r/dockle # Latest version
     ```
     *For other operating systems, please consult the official documentation for each tool.*
 
